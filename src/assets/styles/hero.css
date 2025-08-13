@@ -14,7 +14,7 @@
                           /* Ajustez cette valeur pour le rendu visuel souhaité */
   justify-content: center;
 
-  background-image: url('/src/assets/images/concert-hero.jpg');
+  background-image: url('../images/concert-hero.jpg');
   background-size: cover;
   background-position: center;
   /* background-attachment: fixed; */ /* Dé-commentez pour remettre, mais attention */

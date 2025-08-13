@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import logoImage from '../../assets/images/logo.png';
 import '../../assets/styles/footer.css';
 
 const Footer = ({ openSimulator }) => {
@@ -33,7 +34,7 @@ const Footer = ({ openSimulator }) => {
           <div className="footer-brand">
             <a href="#hero" aria-label="MDMC - Retour à l'accueil">
               <img 
-                src="/assets/images/logo.png" 
+                src={logoImage} 
                 alt="MDMC Logo" 
                 onError={handleLogoError}
               />

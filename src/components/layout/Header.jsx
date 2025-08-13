@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
+import logoImage from '../../assets/images/logo.png';
 // Assurez-vous que le chemin vers le CSS est correct
 import '../../assets/styles/header.css';
 
@@ -103,7 +104,7 @@ const Header = () => {
           {isHomePage ? (
             <a href="#hero" aria-label="MDMC - Retour à l'accueil">
               <img 
-                src="/assets/images/logo.png" 
+                src={logoImage} 
                 alt="MDMC Logo" 
                 onError={handleLogoError}
               />
@@ -117,7 +118,7 @@ const Header = () => {
           ) : (
             <Link to="/" aria-label="MDMC - Retour à l'accueil">
               <img 
-                src="/assets/images/logo.png" 
+                src={logoImage} 
                 alt="MDMC Logo" 
                 onError={handleLogoError}
               />
