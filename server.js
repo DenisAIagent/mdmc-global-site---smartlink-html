@@ -246,7 +246,17 @@ app.post('/api/proxy/create-smartlink', async (req, res) => {
 
 // Routes pour admin HTML (avant le catch-all React)
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/admin/index.html'));
+  const adminPath = path.join(__dirname, 'public/admin/index.html');
+  console.log(`📄 Serving admin page: ${adminPath}`);
+  console.log(`📁 File exists: ${fs.existsSync(adminPath)}`);
+  
+  // Forcer pas de cache pour admin
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  
+  res.sendFile(adminPath);
 });
 
 app.get('/admin/*', (req, res) => {
