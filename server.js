@@ -172,6 +172,7 @@ app.post('/api/upload/audio', (req, res) => {
         
         const data = await response.text();
         console.log(`✅ Backend upload response:`, response.status);
+        console.log(`📄 Backend response data:`, data.substring(0, 200));
         
         res.status(response.status);
         res.setHeader('Content-Type', response.headers.get('content-type') || 'application/json');
