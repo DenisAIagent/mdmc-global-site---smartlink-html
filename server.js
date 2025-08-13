@@ -115,6 +115,80 @@ app.post('/api/proxy/login', async (req, res) => {
   }
 });
 
+// CORS Proxy pour upload audio
+app.post('/api/upload/audio', async (req, res) => {
+  try {
+    console.log(`🔄 Proxying audio upload`);
+    
+    const backendUrl = 'https://api.mdmcmusicads.com/api/v1/upload/audio';
+    const adminToken = req.headers['authorization'] || req.headers['x-admin-token'];
+    
+    const headers = {
+      'Content-Type': req.headers['content-type'],
+    };
+    
+    if (adminToken) {
+      headers['Authorization'] = adminToken.startsWith('Bearer ') ? adminToken : `Bearer ${adminToken}`;
+    }
+    
+    const response = await fetch(backendUrl, {
+      method: 'POST',
+      headers,
+      body: req.body
+    });
+    
+    const data = await response.json();
+    
+    console.log(`✅ Audio upload response:`, response.status, data.success ? 'Success' : 'Failed');
+    
+    res.status(response.status).json(data);
+    
+  } catch (error) {
+    console.error('❌ Audio upload proxy error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Audio upload failed',
+      details: error.message 
+    });
+  }
+});
+
+// CORS Proxy pour suppression audio
+app.delete('/api/upload/audio/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    console.log(`🔄 Proxying audio deletion: ${filename}`);
+    
+    const backendUrl = `https://api.mdmcmusicads.com/api/v1/upload/audio/${filename}`;
+    const adminToken = req.headers['authorization'] || req.headers['x-admin-token'];
+    
+    const headers = {};
+    
+    if (adminToken) {
+      headers['Authorization'] = adminToken.startsWith('Bearer ') ? adminToken : `Bearer ${adminToken}`;
+    }
+    
+    const response = await fetch(backendUrl, {
+      method: 'DELETE',
+      headers
+    });
+    
+    const data = await response.json();
+    
+    console.log(`✅ Audio deletion response:`, response.status, data.success ? 'Success' : 'Failed');
+    
+    res.status(response.status).json(data);
+    
+  } catch (error) {
+    console.error('❌ Audio deletion proxy error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Audio deletion failed',
+      details: error.message 
+    });
+  }
+});
+
 // CORS Proxy pour création SmartLink
 app.post('/api/proxy/create-smartlink', async (req, res) => {
   try {
@@ -131,8 +205,8 @@ app.post('/api/proxy/create-smartlink', async (req, res) => {
       useAuth = true;
     }
     
-    // Récupérer le token admin depuis l'en-tête
-    const adminToken = req.headers['x-admin-token'];
+    // Récupérer le token admin depuis les en-têtes (priorité à Authorization)
+    const adminToken = req.headers['authorization'] || req.headers['x-admin-token'];
     
     const headers = {
       'Content-Type': 'application/json',
@@ -140,7 +214,11 @@ app.post('/api/proxy/create-smartlink', async (req, res) => {
     
     // Ajouter l'authentification seulement si nécessaire et token disponible
     if (useAuth && adminToken) {
-      headers['Authorization'] = `Bearer ${adminToken}`;
+      // Si le token a déjà le préfixe Bearer, l'utiliser tel quel
+      headers['Authorization'] = adminToken.startsWith('Bearer ') ? adminToken : `Bearer ${adminToken}`;
+      console.log('🔑 Using admin token for authentication');
+    } else if (useAuth) {
+      console.warn('⚠️ Authentication required but no token provided');
     }
     
     const response = await fetch(backendUrl, {

@@ -1102,12 +1102,17 @@
 
                 // Récupérer le token admin du localStorage (défini au niveau /admin)
                 const adminToken = localStorage.getItem('adminToken');
+                
+                if (!adminToken) {
+                    throw new Error('Token administrateur manquant. Veuillez vous reconnecter via /admin');
+                }
 
                 // Appel au proxy local pour éviter CORS
                 const response = await fetch('/api/proxy/create-smartlink', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`,
                         'X-Admin-Token': adminToken,
                     },
                     body: JSON.stringify(smartLinkData)
