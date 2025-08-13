@@ -1367,6 +1367,14 @@
                 });
 
                 xhr.open('POST', '/api/upload/audio');
+                
+                // Ajouter le token d'authentification
+                const adminToken = localStorage.getItem('adminToken');
+                if (adminToken) {
+                    xhr.setRequestHeader('Authorization', `Bearer ${adminToken}`);
+                    xhr.setRequestHeader('X-Admin-Token', adminToken);
+                }
+                
                 xhr.send(formData);
 
             } catch (error) {
@@ -1441,8 +1449,17 @@
             if (!uploadedAudioData) return;
 
             try {
+                // Ajouter le token d'authentification pour la suppression
+                const adminToken = localStorage.getItem('adminToken');
+                const headers = {};
+                if (adminToken) {
+                    headers['Authorization'] = `Bearer ${adminToken}`;
+                    headers['X-Admin-Token'] = adminToken;
+                }
+                
                 const response = await fetch(`/api/upload/audio/${uploadedAudioData.filename}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: headers
                 });
 
                 if (response.ok) {
