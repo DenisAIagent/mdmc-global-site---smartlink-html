@@ -84,6 +84,39 @@ app.get('/api/proxy/fetch-metadata', async (req, res) => {
   }
 });
 
+// CORS Proxy pour création SmartLink
+app.post('/api/proxy/create-smartlink', async (req, res) => {
+  try {
+    console.log(`🔄 Proxying SmartLink creation`);
+    
+    const backendUrl = 'https://api.mdmcmusicads.com/api/v1/smartlinks';
+    
+    const response = await fetch(backendUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // TODO: Ajouter authentification si nécessaire
+      },
+      body: JSON.stringify(req.body)
+    });
+    
+    const data = await response.json();
+    
+    console.log(`✅ SmartLink creation response:`, response.status, data.success ? 'Success' : 'Failed');
+    
+    // Transférer le status code et les données
+    res.status(response.status).json(data);
+    
+  } catch (error) {
+    console.error('❌ SmartLink creation proxy error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Proxy creation failed',
+      details: error.message 
+    });
+  }
+});
+
 // Routes pour admin HTML (avant le catch-all React)
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin/index.html'));

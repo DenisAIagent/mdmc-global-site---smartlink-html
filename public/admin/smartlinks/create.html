@@ -1097,12 +1097,11 @@
                     isPublished: true
                 };
 
-                // Appel à l'API backend MDMC
-                const response = await fetch('https://api.mdmcmusicads.com/api/v1/smartlinks', {
+                // Appel au proxy local pour éviter CORS
+                const response = await fetch('/api/proxy/create-smartlink', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // Note: Authentication should be handled by admin login
                     },
                     body: JSON.stringify(smartLinkData)
                 });
