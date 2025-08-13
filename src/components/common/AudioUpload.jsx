@@ -41,21 +41,65 @@ const AudioUpload = ({ value, onChange, error, helperText }) => {
     };
   }, [audioInfo?.url]);
 
-  // Validation du fichier audio
+  // Validation du fichier audio renforcée
   const validateAudioFile = (file) => {
-    const validTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav'];
+    const validTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/x-wav'];
+    const validExtensions = ['.mp3', '.wav'];
     const maxSize = 10 * 1024 * 1024; // 10MB max
+    const minSize = 1024; // 1KB minimum pour éviter les fichiers vides
     const maxDuration = 35; // 35 secondes max pour être sûr
 
+    // Validation du type MIME
     if (!validTypes.includes(file.type)) {
-      throw new Error('Format non supporté. Utilisez MP3 ou WAV.');
+      throw new Error('Format non supporté. Utilisez des fichiers MP3 ou WAV uniquement.');
+    }
+
+    // Validation de l'extension
+    const fileName = file.name.toLowerCase();
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    if (!hasValidExtension) {
+      throw new Error('Extension de fichier invalide. Utilisez .mp3 ou .wav uniquement.');
+    }
+
+    // Validation de la taille
+    if (file.size < minSize) {
+      throw new Error('Fichier trop petit. Veuillez sélectionner un fichier audio valide.');
     }
 
     if (file.size > maxSize) {
-      throw new Error('Fichier trop volumineux. Maximum 10MB.');
+      throw new Error('Fichier trop volumineux. Maximum 10MB autorisé.');
     }
 
-    return true;
+    // Validation basique du contenu (signature de fichier)
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const arr = new Uint8Array(e.target.result.slice(0, 4));
+        let header = '';
+        for (let i = 0; i < arr.length; i++) {
+          header += arr[i].toString(16);
+        }
+        
+        // Vérifier les signatures de fichiers audio
+        const mp3Signatures = ['fff3', 'fff2', 'fffa', 'fffb']; // MP3 signatures
+        const wavSignature = '52494646'; // WAV signature "RIFF"
+        
+        const isValidMP3 = mp3Signatures.some(sig => header.startsWith(sig));
+        const isValidWAV = header.startsWith(wavSignature);
+        
+        if (!isValidMP3 && !isValidWAV) {
+          reject(new Error('Fichier audio corrompu ou format invalide. Veuillez utiliser un fichier MP3 ou WAV valide.'));
+        } else {
+          resolve(true);
+        }
+      };
+      
+      reader.onerror = () => {
+        reject(new Error('Impossible de lire le fichier. Veuillez réessayer.'));
+      };
+      
+      reader.readAsArrayBuffer(file);
+    });
   };
 
   // Obtenir les infos du fichier audio
@@ -87,7 +131,7 @@ const AudioUpload = ({ value, onChange, error, helperText }) => {
     });
   };
 
-  // Upload vers le serveur
+  // Upload vers le serveur avec gestion d'erreurs améliorée
   const uploadToServer = async (file) => {
     const formData = new FormData();
     formData.append('audio', file);
@@ -111,6 +155,8 @@ const AudioUpload = ({ value, onChange, error, helperText }) => {
       throw new Error('Configuration d\'authentification manquante. Contactez l\'administrateur.');
     }
     
+    console.log('🔄 Upload Audio: Début envoi vers serveur...');
+    
     const response = await fetch(`${API_CONFIG.BASE_URL}/upload/audio`, {
       method: 'POST',
       headers,
@@ -123,15 +169,58 @@ const AudioUpload = ({ value, onChange, error, helperText }) => {
       let errorMessage = `Erreur HTTP ${response.status}`;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
+        
+        // Gestion spécifique des erreurs Cloudinary
+        if (errorData.error && errorData.error.includes('Cloudinary')) {
+          if (errorData.error.includes('Unsupported video format') || errorData.error.includes('format')) {
+            errorMessage = 'Format de fichier non supporté. Veuillez utiliser un fichier MP3 ou WAV valide.';
+          } else if (errorData.error.includes('File size')) {
+            errorMessage = 'Fichier trop volumineux. Maximum 10MB autorisé.';
+          } else {
+            errorMessage = 'Erreur de configuration du service d\'upload. Contactez l\'administrateur.';
+          }
+        } else {
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        }
       } catch (e) {
         console.error('Impossible de parser la réponse d\'erreur:', e);
+        // Messages d'erreur plus user-friendly selon le status
+        switch (response.status) {
+          case 400:
+            errorMessage = 'Fichier audio invalide. Veuillez sélectionner un fichier MP3 ou WAV valide.';
+            break;
+          case 401:
+            errorMessage = 'Session expirée. Veuillez vous reconnecter.';
+            break;
+          case 413:
+            errorMessage = 'Fichier trop volumineux. Maximum 10MB autorisé.';
+            break;
+          case 415:
+            errorMessage = 'Format de fichier non supporté. Utilisez MP3 ou WAV uniquement.';
+            break;
+          case 500:
+            errorMessage = 'Erreur temporaire du serveur. Veuillez réessayer dans quelques instants.';
+            break;
+          case 502:
+          case 503:
+            errorMessage = 'Service temporairement indisponible. Réessayez dans quelques minutes.';
+            break;
+          default:
+            errorMessage = `Erreur d'upload (${response.status}). Contactez l'administrateur si le problème persiste.`;
+        }
       }
       throw new Error(errorMessage);
     }
 
     const result = await response.json();
     console.log('✅ Upload Audio Success:', result);
+    
+    // Gestion des réponses de fallback temporaire
+    if (result.data && result.data.temporary) {
+      console.warn('⚠️ Upload Audio: Mode fallback temporaire activé');
+      console.warn('📝 Message:', result.data.message);
+    }
+    
     return result.data;
   };
 
@@ -147,8 +236,8 @@ const AudioUpload = ({ value, onChange, error, helperText }) => {
       setUploadProgress(0);
       setUploadError(null);
 
-      // Validation
-      validateAudioFile(file);
+      // Validation asynchrone
+      await validateAudioFile(file);
 
       // Simulation de progression pour l'UX
       const progressInterval = setInterval(() => {
