@@ -5,10 +5,6 @@ import {
   Routes,
   Route,
   Navigate,
-  Outlet,
-  useLocation,
-  useNavigate,
-  NavLink
 } from 'react-router-dom';
 
 // Import du hook de tracking SEO critique
@@ -25,11 +21,7 @@ import { updateMetaTagsForLanguage } from './utils/multilingualMeta';
 import facebookPixel from './services/facebookPixel.service';
 import gtm from './services/googleTagManager.service';
 
-import {
-  CircularProgress,
-  Box,
-  Typography,
-} from '@mui/material';
+// Material-UI supprimé avec l'admin React
 
 
 import Header from './components/layout/Header';
@@ -46,9 +38,6 @@ import Reviews from './components/sections/Reviews';
 import Contact from './components/sections/Contact';
 import AllReviews from './components/pages/AllReviews';
 import ArtistPage from './pages/public/ArtistPage';
-import SmartLinkPageNew from './pages/public/SmartLinkPageNew';
-import SmartLinkPageClean from './pages/public/SmartLinkPageClean';
-import SmartLinkPageDoubleTracking from './pages/public/SmartLinkPageDoubleTracking';
 
 // Pages de ressources légales
 import FAQ from './pages/public/resources/FAQ';
@@ -65,82 +54,9 @@ import YouTubeAdsMusique from './pages/services/YouTubeAdsMusique';
 import MetaAdsArtistes from './pages/services/MetaAdsArtistes';
 import TikTokPromotionMusicale from './pages/services/TikTokPromotionMusicale';
 
-import AdminLogin from './components/admin/AdminLogin';
-import AdminPanel from './components/admin/AdminPanel';
-import AdminLayout from './components/admin/AdminLayout';
-import ArtistListPage from './pages/admin/artists/ArtistListPage';
-import ArtistCreatePage from './pages/admin/artists/ArtistCreatePage';
-import ArtistEditPage from './pages/admin/artists/ArtistEditPage';
-import SmartlinkListPage from './pages/admin/smartlinks/SmartlinkListPage';
-import SmartlinkCreatePage from './pages/admin/smartlinks/SmartlinkCreatePage';
-import SmartlinkEditPage from './pages/admin/smartlinks/SmartlinkEditPage';
-import SmartlinkAnalyticsPage from './pages/admin/smartlinks/SmartlinkAnalyticsPage';
-import ShortLinkManager from './components/admin/ShortLinkManager';
-import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+// Admin supprimé - utilisation des pages HTML statiques dans /public/admin/
 
-const ProtectedRoute = ({ children }) => {
-  const [authStatus, setAuthStatus] = useState({ isLoading: true, isAuthenticated: false, isAdmin: false });
-  const location = useLocation();
-
-  useEffect(() => {
-    let isMounted = true;
-    const checkAuth = async () => {
-      if (!isMounted) return;
-      
-      // Bypass d'authentification en développement
-      const bypassAuth = import.meta.env.VITE_BYPASS_AUTH === 'true';
-      if (bypassAuth) {
-        console.log('🔓 BYPASS_AUTH activé - Accès admin autorisé sans authentification');
-        if (isMounted) {
-          setAuthStatus({
-            isLoading: false,
-            isAuthenticated: true,
-            isAdmin: true,
-          });
-        }
-        return;
-      }
-      
-      try {
-        const response = await apiService.auth.getMe();
-        if (response.success && response.data) {
-          if (isMounted) {
-            setAuthStatus({
-              isLoading: false,
-              isAuthenticated: true,
-              isAdmin: response.data.role === 'admin',
-            });
-          }
-        } else {
-          if (isMounted) {
-            setAuthStatus({ isLoading: false, isAuthenticated: false, isAdmin: false });
-          }
-        }
-      } catch {
-        if (isMounted) {
-          setAuthStatus({ isLoading: false, isAuthenticated: false, isAdmin: false });
-        }
-      }
-    };
-    checkAuth();
-    return () => { isMounted = false; };
-  }, [location.key]);
-
-  if (authStatus.isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
-        <CircularProgress />
-        <Typography sx={{ mt: 2 }}>Vérification de l'accès...</Typography>
-      </Box>
-    );
-  }
-
-  if (!authStatus.isAuthenticated || !authStatus.isAdmin) {
-    return <Navigate to="/admin/login" state={{ from: location }} replace />;
-  }
-
-  return children;
-};
+// ProtectedRoute supprimé - admin HTML statique utilisé
 
 
 const HomePage = ({ openSimulator }) => {
@@ -216,10 +132,7 @@ function App() {
         <Route path="/" element={<HomePage openSimulator={openSimulator} />} />
         <Route path="/all-reviews" element={<AllReviews />} />
         <Route path="/artists/:slug" element={<ArtistPage />} />
-        <Route path="/s/:slug" element={<SmartLinkPageNew />} />
-        <Route path="/smartlinks/:artistSlug/:trackSlug" element={<SmartLinkPageClean />} />
-        <Route path="/smartlinks-old/:artistSlug/:trackSlug" element={<SmartLinkPageNew />} />
-        <Route path="/smartlink-test/:slug" element={<SmartLinkPageDoubleTracking />} />
+        {/* SmartLinks supprimés - utilisation des pages HTML statiques dans /backend/public/smartlinks/ */}
         
         {/* Routes services SEO-optimisées */}
         <Route path="/services/youtube-ads-musique" element={<YouTubeAdsMusique />} />
@@ -236,25 +149,8 @@ function App() {
         <Route path="/ressources/conditions-generales" element={<ConditionsGenerales />} />
         <Route path="/ressources/cookies" element={<Cookies />} />
         
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<AdminPanel />} />
-          <Route path="artists" element={<Outlet />}>
-            <Route index element={<ArtistListPage />} />
-            <Route path="new" element={<ArtistCreatePage />} />
-            <Route path="edit/:slug" element={<ArtistEditPage />} />
-          </Route>
-          <Route path="smartlinks" element={<Outlet />}>
-            <Route index element={<SmartlinkListPage />} />
-            <Route path="new" element={<SmartlinkCreatePage />} />
-            <Route path="edit/:smartlinkId" element={<SmartlinkEditPage />} />
-            <Route path="analytics/:id" element={<SmartlinkAnalyticsPage />} />
-          </Route>
-          <Route path="analytics" element={<SmartlinkAnalyticsPage />} />
-          <Route path="shortlinks" element={<ShortLinkManager />} />
-          <Route path="settings" element={<AdminSettingsPage />} />
-        </Route>
+        {/* Admin React supprimé - redirection vers pages HTML statiques */}
+        <Route path="/admin/*" element={<Navigate to="/admin/dashboard.html" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
