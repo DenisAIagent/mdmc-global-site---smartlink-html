@@ -1,8 +1,0 @@
-# Redirections pour smartlinks SEO
-# Redirection des bots sociaux vers le backend pour les métadonnées
-
-# Smartlinks direct access for social bots
-/smartlinks/:artistSlug/:trackSlug  https://mdmcv4-backend-production-b615.up.railway.app/smartlinks/:artistSlug/:trackSlug  200  User-Agent: *facebook* *twitter* *linkedin* *whatsapp* *telegram* *discord* *slack* *bot*
-
-# Default fallback to React app
-/* /index.html 200

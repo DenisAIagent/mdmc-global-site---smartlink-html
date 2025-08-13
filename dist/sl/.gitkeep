@@ -1,6 +1,0 @@
-# Dossier pour les pages statiques SmartLinks
-# Les fichiers HTML générés automatiquement seront stockés ici
-# Format: {shortId}.html
-# Exemple: ABC123.html, DEF456.html
-
-# Ce dossier est servi par Express.js via la route /sl/:shortId.html
