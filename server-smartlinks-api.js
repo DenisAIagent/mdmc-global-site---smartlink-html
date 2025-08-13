@@ -36,209 +36,431 @@ function generateId() {
 }
 
 function generateStaticSmartLinkHTML(smartlink) {
+    // Générer les liens des plateformes
+    const platformLinks = smartlink.platformLinks && smartlink.platformLinks.length > 0 
+        ? smartlink.platformLinks
+        : [
+            { platform: 'Spotify', url: '#', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/spotify.svg' },
+            { platform: 'Apple Music', url: '#', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/applemusic.svg' },
+            { platform: 'YouTube Music', url: '#', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/youtubemusic.svg' },
+            { platform: 'Deezer', url: '#', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/deezer.svg' }
+        ];
+
+    // Générer le HTML des plateformes
+    const platformsHTML = platformLinks.map(link => {
+        const platformColors = {
+            'Spotify': '#1DB954',
+            'Apple Music': 'linear-gradient(135deg, #FA233B, #FF6B35)',
+            'YouTube Music': '#FF0000',
+            'Deezer': '#FEAA2D',
+            'Amazon Music': '#FF9900',
+            'Tidal': '#000000',
+            'SoundCloud': '#ff5500'
+        };
+
+        const platformDescriptions = {
+            'Spotify': 'Music for everyone',
+            'Apple Music': 'Music everywhere',
+            'YouTube Music': 'Music videos & more',
+            'Deezer': 'Flow your music',
+            'Amazon Music': 'Prime music',
+            'Tidal': 'High fidelity',
+            'SoundCloud': 'Discover music'
+        };
+
+        const color = platformColors[link.platform] || '#333';
+        const description = platformDescriptions[link.platform] || 'Music platform';
+        const iconUrl = link.icon || `https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/${link.platform.toLowerCase().replace(/\s+/g, '')}.svg`;
+
+        return `
+                <a href="${link.url}" target="_blank" class="service-item" onclick="trackClick('${link.platform}')">
+                    <div class="service-icon" style="background: ${color}; background-image: url('${iconUrl}'); filter: brightness(0) invert(1);">
+                    </div>
+                    <div class="service-info">
+                        <div class="service-name">${link.platform}</div>
+                        <div class="service-description">${description}</div>
+                    </div>
+                    <button class="play-btn">Play</button>
+                </a>`;
+    }).join('');
+
+    const artworkUrl = smartlink.artworkUrl || 'https://via.placeholder.com/300x300/8B0000/FFFFFF?text=No+Artwork';
+    const previewUrl = smartlink.previewUrl || null;
+
     return `<!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${smartlink.trackTitle} - ${smartlink.artistName}</title>
+    <title>${smartlink.trackTitle || 'Track'} - ${smartlink.artistName || 'Artist'}</title>
     
-    <!-- Meta tags pour partage social -->
-    <meta property="og:title" content="${smartlink.trackTitle} - ${smartlink.artistName}">
-    <meta property="og:description" content="Écoutez ${smartlink.trackTitle} de ${smartlink.artistName} sur toutes les plateformes">
-    <meta property="og:image" content="${smartlink.artworkUrl || '/assets/images/default-artwork.jpg'}">
+    <!-- OpenGraph Meta Tags -->
+    <meta property="og:title" content="${smartlink.trackTitle || 'Track'} - ${smartlink.artistName || 'Artist'}">
+    <meta property="og:description" content="Écoutez '${smartlink.trackTitle || 'Track'}' par ${smartlink.artistName || 'Artist'} sur votre plateforme préférée">
+    <meta property="og:image" content="${artworkUrl}">
     <meta property="og:type" content="music.song">
     <meta property="og:url" content="${smartlink.publicUrl || ''}">
     
+    <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${smartlink.trackTitle} - ${smartlink.artistName}">
-    <meta name="twitter:description" content="Écoutez ${smartlink.trackTitle} de ${smartlink.artistName} sur toutes les plateformes">
-    <meta name="twitter:image" content="${smartlink.artworkUrl || '/assets/images/default-artwork.jpg'}">
-    
-    <link rel="icon" href="/assets/images/favicon.png" type="image/png">
+    <meta name="twitter:title" content="${smartlink.trackTitle || 'Track'} - ${smartlink.artistName || 'Artist'}">
+    <meta name="twitter:description" content="Écoutez sur votre plateforme préférée">
+    <meta name="twitter:image" content="${artworkUrl}">
     
     <style>
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            height: 100vh;
+            background: linear-gradient(135deg, #2c1810 0%, #4a2c1a 50%, #6b3d28 100%);
+            background-attachment: fixed;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-        }
-        
-        .smartlink-container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
             position: relative;
         }
-        
-        .artwork {
-            width: 220px;
-            height: 220px;
-            border-radius: 15px;
-            margin: 0 auto 25px;
-            object-fit: cover;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('${artworkUrl}');
+            background-size: cover;
+            background-position: center;
+            filter: blur(40px) brightness(0.3);
+            z-index: -2;
         }
-        
-        .artwork:hover {
-            transform: scale(1.05);
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(circle at 30% 20%, rgba(139, 69, 19, 0.3) 0%, transparent 50%),
+                            radial-gradient(circle at 70% 80%, rgba(160, 82, 45, 0.2) 0%, transparent 50%),
+                            radial-gradient(circle at 40% 40%, rgba(210, 180, 140, 0.1) 0%, transparent 50%);
+            filter: blur(40px);
+            z-index: -1;
         }
-        
-        h1 { 
-            color: #333; 
-            margin-bottom: 10px; 
-            font-size: 28px;
-            font-weight: 700;
-            line-height: 1.2;
+
+        .music-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 32px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
         }
-        
-        .artist { 
-            color: #666; 
-            margin-bottom: 35px; 
-            font-size: 20px;
-            font-weight: 500;
+
+        .album-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 24px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-        
-        .platforms {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .platform-button {
+
+        .album-cover {
+            width: 100%;
+            height: 100%;
+            background-image: url('${artworkUrl}');
+            background-size: cover;
+            background-position: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 18px 25px;
-            border-radius: 12px;
-            text-decoration: none;
-            color: white;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            gap: 15px;
             position: relative;
-            overflow: hidden;
         }
-        
-        .platform-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+        .album-cover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.2);
         }
-        
-        .platform-button:active {
+
+        .play-button {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 2;
+        }
+
+        .play-button:hover {
+            transform: scale(1.05);
+            background: white;
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 14px solid #333;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            margin-left: 3px;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 16px;
+            color: #8e8e93;
+            margin-bottom: 32px;
+            font-weight: 400;
+        }
+
+        .services-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .service-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(248, 248, 248, 0.8);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .service-item:hover {
+            background: rgba(240, 240, 240, 0.9);
             transform: translateY(-1px);
         }
-        
-        .spotify { background: linear-gradient(135deg, #1DB954, #1ed760); }
-        .apple { background: linear-gradient(135deg, #000, #333); }
-        .youtube { background: linear-gradient(135deg, #FF0000, #cc0000); }
-        .deezer { background: linear-gradient(135deg, #FEAA2D, #ff8800); }
-        .amazon { background: linear-gradient(135deg, #FF9900, #ff7700); }
-        .tidal { background: linear-gradient(135deg, #000, #1a1a1a); }
-        .soundcloud { background: linear-gradient(135deg, #ff5500, #ff3300); }
-        
-        .powered-by {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            color: #999;
-            font-size: 14px;
-        }
-        
-        .powered-by a {
-            color: #E50914;
-            text-decoration: none;
+
+        .service-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            margin-right: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: 600;
+            color: white;
+            font-size: 14px;
+            background-size: 24px 24px;
+            background-repeat: no-repeat;
+            background-position: center;
         }
-        
+
+        .service-info {
+            flex: 1;
+        }
+
+        .service-name {
+            font-size: 17px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 2px;
+        }
+
+        .service-description {
+            font-size: 14px;
+            color: #8e8e93;
+            font-weight: 400;
+        }
+
+        .play-btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .play-btn:hover {
+            background: #0056CC;
+            transform: scale(1.02);
+        }
+
+        .play-btn:active {
+            transform: scale(0.98);
+        }
+
+        .audio-player {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
         @media (max-width: 480px) {
-            .smartlink-container {
-                padding: 30px 20px;
+            .music-card {
+                padding: 24px;
                 margin: 10px;
             }
             
-            .artwork {
-                width: 180px;
-                height: 180px;
-            }
-            
-            h1 {
-                font-size: 24px;
-            }
-            
-            .artist {
-                font-size: 18px;
-            }
-            
-            .platform-button {
-                padding: 15px 20px;
-                font-size: 15px;
+            .album-container {
+                width: 120px;
+                height: 120px;
             }
         }
     </style>
+    
+    
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=g-1234578"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'g-1234578');
+    </script>
+    
+    
+    
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTP-12345TEST');</script>
 </head>
 <body>
-    <div class="smartlink-container">
-        <img src="${smartlink.artworkUrl || '/assets/images/default-artwork.jpg'}" 
-             alt="${smartlink.trackTitle}" 
-             class="artwork"
-             onerror="this.src='/assets/images/default-artwork.jpg'">
-             
-        <h1>${smartlink.trackTitle || 'Titre non disponible'}</h1>
-        <div class="artist">${smartlink.artistName || 'Artiste non disponible'}</div>
-        
-        <div class="platforms">
-            ${smartlink.platformLinks ? Object.entries(smartlink.platformLinks)
-                .filter(([platform, url]) => url && url.trim())
-                .map(([platform, url]) => {
-                    const platformName = platform.charAt(0).toUpperCase() + platform.slice(1);
-                    return `
-                        <a href="${url}" 
-                           target="_blank" 
-                           rel="noopener noreferrer"
-                           class="platform-button ${platform.toLowerCase()}"
-                           onclick="trackClick('${platform}')">
-                            <span>Écouter sur ${platformName}</span>
-                        </a>
-                    `;
-                }).join('') : 
-                '<p style="color: #666; font-style: italic;">Aucune plateforme disponible</p>'
-            }
-        </div>
-        
-        <div class="powered-by">
-            Créé avec <a href="https://mdmcmusicads.com" target="_blank">MDMC Music Ads</a>
-        </div>
-    </div>
     
-    <script>
-        function trackClick(platform) {
-            console.log('Clic sur plateforme:', platform);
-        }
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTP-12345TEST"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    
+
+    <div class="music-card">
+        <div class="album-container">
+            <div class="album-cover">
+                <div class="play-button" onclick="playPreview()">
+                    <div class="play-icon"></div>
+                </div>
+            </div>
+        </div>
         
-        window.addEventListener('load', function() {
-            console.log('SmartLink ${smartlink.trackTitle} chargé');
+        <h1 class="title">${smartlink.trackTitle || 'Track'}</h1>
+        <p class="subtitle">${smartlink.artistName || 'Artist'}</p>
+        
+        <div class="services-list">
+            ${platformsHTML}
+        </div>
+        
+        ${previewUrl ? `<audio class="audio-player" id="audioPlayer" preload="metadata">
+            <source src="${previewUrl}" type="audio/mpeg">
+        </audio>` : ''}
+    </div>
+
+    <script>
+        let audioPlayer = null;
+        let isPlaying = false;
+
+        function playPreview() {
+            ${previewUrl ? `
+            audioPlayer = document.getElementById('audioPlayer');
+            if (audioPlayer) {
+                if (isPlaying) {
+                    audioPlayer.pause();
+                    isPlaying = false;
+                } else {
+                    audioPlayer.play();
+                    isPlaying = true;
+                }
+            }
+            ` : `
+            console.log('Pas d\\'extrait audio disponible');
+            `}
+            const playBtn = document.querySelector('.play-button');
+            playBtn.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                playBtn.style.transform = 'scale(1)';
+            }, 150);
+        }
+
+        function trackClick(platform) {
+            // Tracking des clics
+            ${smartlink.trackingId ? `
+            gtag('event', 'platform_click', {
+                'platform': platform,
+                'track_title': '${smartlink.trackTitle || 'Track'}',
+                'artist_name': '${smartlink.artistName || 'Artist'}'
+            });
+            ` : ''}
+            
+            console.log('Clic sur:', platform);
+            
+            // Animation de feedback
+            const serviceItem = event.currentTarget;
+            serviceItem.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                serviceItem.style.transform = 'translateY(-1px)';
+            }, 100);
+        }
+
+        // Effets sonores et animations au survol
+        document.querySelectorAll('.service-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.style.transform = 'translateY(-2px)';
+            });
+            
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Animation d'entrée
+        window.addEventListener('load', () => {
+            const card = document.querySelector('.music-card');
+            card.style.transform = 'translateY(20px)';
+            card.style.opacity = '0';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                card.style.transform = 'translateY(0)';
+                card.style.opacity = '1';
+            }, 100);
         });
     </script>
 </body>
 </html>`;
 }
+
+export { generateStaticSmartLinkHTML };
 
 export function addSmartLinksApiRoutes(app) {
     // Parser JSON pour les routes API
