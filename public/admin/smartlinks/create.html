@@ -774,10 +774,13 @@
                 <div class="result-card">
                     <h3 style="margin-bottom: 16px; color: var(--secondary);">🎉 SmartLink généré avec succès</h3>
                     <div class="result-url" id="generatedUrl">
-                        https://music.link/mon-single-2025
+                        <!-- URL sera générée dynamiquement -->
                     </div>
                     <p style="color: var(--gray-medium); margin-top: 16px;">
                         Partagez ce lien partout ! Vos fans seront automatiquement redirigés vers leur plateforme préférée.
+                    </p>
+                    <p style="color: var(--gray-medium); font-size: 14px; margin-top: 8px;">
+                        Format: https://www.mdmcmusicads.com/#/smartlinks/artiste/titre
                     </p>
                 </div>
             </div>
@@ -1097,11 +1100,15 @@
                     isPublished: true
                 };
 
+                // Récupérer le token admin du localStorage (défini au niveau /admin)
+                const adminToken = localStorage.getItem('adminToken');
+
                 // Appel au proxy local pour éviter CORS
                 const response = await fetch('/api/proxy/create-smartlink', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken,
                     },
                     body: JSON.stringify(smartLinkData)
                 });
@@ -1127,8 +1134,14 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // SmartLink créé avec succès
-                    const generatedUrl = `https://www.mdmcmusicads.com/smartlinks/${result.data.artistSlug}/${result.data.slug}`;
+                    // SmartLink créé avec succès - utiliser le format frontend React
+                    const artistSlug = result.data.artistSlug || result.data.artist?.slug || 'artist';
+                    const trackSlug = result.data.slug || result.data.trackSlug || 'track';
+                    
+                    const generatedUrl = `https://www.mdmcmusicads.com/#/smartlinks/${artistSlug}/${trackSlug}`;
+                    
+                    console.log('✅ SmartLink généré:', generatedUrl);
+                    console.log('📊 Données reçues:', result.data);
                     
                     document.getElementById('generatedUrl').textContent = generatedUrl;
                     

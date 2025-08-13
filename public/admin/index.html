@@ -105,8 +105,51 @@
     </div>
 
     <script>
-        // Bypass temporaire - aller directement au dashboard
-        window.location.href = 'dashboard.html';
+        // Authentification admin avec login API
+        async function loginAdmin() {
+            let adminToken = localStorage.getItem('adminToken');
+            
+            if (adminToken) {
+                // Token existe déjà, redirection directe
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            // Demander les identifiants
+            const email = prompt('Email administrateur:', 'admin@mdmcmusicads.com');
+            if (!email) return;
+            
+            const password = prompt('Mot de passe:', 'admin123');
+            if (!password) return;
+
+            try {
+                // Login via proxy local pour éviter CORS
+                const loginResponse = await fetch('/api/proxy/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const loginData = await loginResponse.json();
+
+                if (loginData.success && loginData.token) {
+                    // Stocker le token JWT
+                    localStorage.setItem('adminToken', loginData.token);
+                    alert('Connexion réussie !');
+                    window.location.href = 'dashboard.html';
+                } else {
+                    throw new Error(loginData.message || 'Connexion échouée');
+                }
+            } catch (error) {
+                alert('Erreur de connexion: ' + error.message);
+                console.error('Login error:', error);
+            }
+        }
+        
+        // Lancer la connexion au chargement
+        loginAdmin();
     </script>
 </body>
 </html>

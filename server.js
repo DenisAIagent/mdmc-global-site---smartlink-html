@@ -84,19 +84,68 @@ app.get('/api/proxy/fetch-metadata', async (req, res) => {
   }
 });
 
+// CORS Proxy pour login admin
+app.post('/api/proxy/login', async (req, res) => {
+  try {
+    console.log(`🔄 Proxying admin login`);
+    
+    const loginUrl = 'https://api.mdmcmusicads.com/api/auth/login';
+    
+    const response = await fetch(loginUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req.body)
+    });
+    
+    const data = await response.json();
+    
+    console.log(`✅ Login response:`, response.status, data.success ? 'Success' : 'Failed');
+    
+    res.status(response.status).json(data);
+    
+  } catch (error) {
+    console.error('❌ Login proxy error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Proxy login failed',
+      details: error.message 
+    });
+  }
+});
+
 // CORS Proxy pour création SmartLink
 app.post('/api/proxy/create-smartlink', async (req, res) => {
   try {
     console.log(`🔄 Proxying SmartLink creation`);
     
-    const backendUrl = 'https://api.mdmcmusicads.com/api/v1/smartlinks';
+    // Essayer d'abord un endpoint public temporaire, puis l'endpoint protégé
+    let backendUrl = 'https://api.mdmcmusicads.com/api/public/smartlinks/create';
+    let useAuth = false;
+    
+    // Si pas d'endpoint public, utiliser l'endpoint protégé
+    const testResponse = await fetch(backendUrl, { method: 'HEAD' }).catch(() => null);
+    if (!testResponse || !testResponse.ok) {
+      backendUrl = 'https://api.mdmcmusicads.com/api/v1/smartlinks';
+      useAuth = true;
+    }
+    
+    // Récupérer le token admin depuis l'en-tête
+    const adminToken = req.headers['x-admin-token'];
+    
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Ajouter l'authentification seulement si nécessaire et token disponible
+    if (useAuth && adminToken) {
+      headers['Authorization'] = `Bearer ${adminToken}`;
+    }
     
     const response = await fetch(backendUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // TODO: Ajouter authentification si nécessaire
-      },
+      headers,
       body: JSON.stringify(req.body)
     });
     
