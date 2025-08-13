@@ -129,24 +129,24 @@ const Contact = () => {
           <div className="contact-info">
             <h3>{t('contact.partners.title')}</h3>
             <div className="partners-grid">
-              {/* Cartes Partenaires - Images temporairement désactivées */}
+              {/* Cartes Partenaires */}
               <div className="partner-card">
-                  <div className="partner-logo-placeholder">FMM</div>
+                  <img src="/assets/images/partner/FMM_Logo_Rough_White_Horizontal.png" alt={t('contact.partners.fmm', 'Fédération des Musiques Métalliques')} loading="lazy" className="partner-logo"/>
                   <h4>{t('contact.partners.fmm')}</h4>
                   <p>{t('contact.partners.fmm_description')}</p>
               </div>
               <div className="partner-card">
-                  <div className="partner-logo-placeholder">Google</div>
+                  <img src="/assets/images/partner/Partner-CMYK.jpg" alt={t('contact.partners.google', 'Google Partner')} loading="lazy" className="partner-logo"/>
                   <h4>{t('contact.partners.google')}</h4>
                   <p>{t('contact.partners.google_description')}</p>
               </div>
               <div className="partner-card">
-                  <div className="partner-logo-placeholder">MHL</div>
+                  <img src="/assets/images/partner/logo-mhl-agency.png" alt={t('contact.partners.mhl', 'MHL Agency & Co')} loading="lazy" className="partner-logo"/>
                   <h4>{t('contact.partners.mhl')}</h4>
                   <p>{t('contact.partners.mhl_description')}</p>
               </div>
               <div className="partner-card">
-                  <div className="partner-logo-placeholder">Algorythme</div>
+                  <img src="/assets/images/partner/logo-vertical-algorythmes.png" alt={t('contact.partners.algorythme', 'Algorythme')} loading="lazy" className="partner-logo"/>
                   <h4>{t('contact.partners.algorythme')}</h4>
                   <p>{t('contact.partners.algorythme_description')}</p>
               </div>

@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import artistAboutImage from '../../assets/images/artist-about.jpg';
 import '../../assets/styles/about.css';
 
 const About = () => {
@@ -17,7 +16,7 @@ const About = () => {
           </div>
 
           <div className="about-image">
-            <img src={artistAboutImage} alt="Illustration section À Propos" />
+            <img src="/assets/images/fans-loyalty.jpg" alt="Expert en marketing musical depuis 2018" />
           </div>
         </div>
 
