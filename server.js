@@ -85,9 +85,11 @@ app.get('/api/proxy/fetch-metadata', async (req, res) => {
 });
 
 // CORS Proxy pour login admin
+app.use(express.json()); // Assurer que le body est parsé
 app.post('/api/proxy/login', async (req, res) => {
   try {
     console.log(`🔄 Proxying admin login`);
+    console.log(`📝 Request body:`, req.body);
     
     const loginUrl = 'https://api.mdmcmusicads.com/api/v1/auth/login';
     
@@ -99,7 +101,20 @@ app.post('/api/proxy/login', async (req, res) => {
       body: JSON.stringify(req.body)
     });
     
-    const data = await response.json();
+    console.log(`🌐 Backend response status:`, response.status);
+    console.log(`🌐 Backend response headers:`, Object.fromEntries(response.headers.entries()));
+    
+    const responseText = await response.text();
+    console.log(`📄 Raw backend response:`, responseText.substring(0, 200));
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (jsonError) {
+      console.error(`❌ JSON parsing failed:`, jsonError);
+      console.error(`📄 Full response text:`, responseText);
+      throw new Error(`Backend returned non-JSON response: ${responseText.substring(0, 100)}`);
+    }
     
     console.log(`✅ Login response:`, response.status, data.success ? 'Success' : 'Failed');
     
