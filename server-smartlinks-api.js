@@ -6,6 +6,18 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Import du mapping strict des pictos plateformes
+const PLATFORM_ICONS = {
+  'Spotify': '/pictos plateformes/picto_spotify.png',
+  'Apple Music': '/pictos plateformes/picto_applemusic.png',
+  'YouTube Music': '/pictos plateformes/picto_youtubemusic.png',
+  'YouTube': '/pictos plateformes/picto_youtube.png',
+  'Deezer': '/pictos plateformes/picto_deezer.png',
+  'Amazon Music': '/pictos plateformes/picto_amazonmusic.png',
+  'Tidal': '/pictos plateformes/picto_tidal.png',
+  'SoundCloud': '/pictos plateformes/picto_soundcloud.png'
+};
+
 const SMARTLINKS_DB_FILE = path.join(__dirname, 'smartlinks-html.json');
 
 function readSmartLinksDB() {
@@ -36,17 +48,12 @@ function generateId() {
 }
 
 function generateStaticSmartLinkHTML(smartlink) {
-    // Générer les liens des plateformes
+    // Générer les liens des plateformes avec validation stricte
     const platformLinks = smartlink.platformLinks && smartlink.platformLinks.length > 0 
-        ? smartlink.platformLinks
-        : [
-            { platform: 'Spotify', url: '#', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/spotify.svg' },
-            { platform: 'Apple Music', url: '#', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/applemusic.svg' },
-            { platform: 'YouTube Music', url: '#', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/youtubemusic.svg' },
-            { platform: 'Deezer', url: '#', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/deezer.svg' }
-        ];
+        ? smartlink.platformLinks.filter(link => PLATFORM_ICONS[link.platform]) // Filtrer uniquement les plateformes supportées
+        : [];
 
-    // Générer le HTML des plateformes
+    // Générer le HTML des plateformes avec filtrage strict
     const platformsHTML = platformLinks.map(link => {
         const platformColors = {
             'Spotify': '#1DB954',
@@ -70,7 +77,13 @@ function generateStaticSmartLinkHTML(smartlink) {
 
         const color = platformColors[link.platform] || '#333';
         const description = platformDescriptions[link.platform] || 'Music platform';
-        const iconUrl = link.icon || `https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/${link.platform.toLowerCase().replace(/\s+/g, '')}.svg`;
+        
+        // Utiliser UNIQUEMENT les pictos locaux - aucun fallback
+        const iconUrl = PLATFORM_ICONS[link.platform];
+        if (!iconUrl) {
+            console.warn(`⚠️ Plateforme non supportée: ${link.platform} - ignorée`);
+            return ''; // Ne pas afficher la plateforme si pas de picto local
+        }
 
         return `
                 <a href="${link.url}" target="_blank" class="service-item" onclick="trackClick('${link.platform}')">
@@ -82,7 +95,7 @@ function generateStaticSmartLinkHTML(smartlink) {
                     </div>
                     <button class="play-btn">Play</button>
                 </a>`;
-    }).join('');
+    }).filter(html => html.length > 0).join(''); // Supprimer les éléments vides
 
     const artworkUrl = smartlink.artworkUrl || 'https://via.placeholder.com/300x300/8B0000/FFFFFF?text=No+Artwork';
     const previewUrl = smartlink.previewUrl || null;
