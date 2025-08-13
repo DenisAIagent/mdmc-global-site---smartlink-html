@@ -933,37 +933,12 @@
             } catch (error) {
                 console.error('Erreur Odesli:', error);
                 
-                // Fallback avec données simulées pour demo
-                fetchedMetadata = {
-                    title: 'Titre récupéré automatiquement',
-                    artist: 'Artiste',
-                    artwork: 'https://via.placeholder.com/300x300?text=Artwork',
-                    platforms: [
-                        { platform: 'Spotify', url: sourceUrl },
-                        { platform: 'Apple Music', url: '#' },
-                        { platform: 'YouTube Music', url: '#' },
-                        { platform: 'Deezer', url: '#' }
-                    ]
-                };
+                button.innerHTML = '<span>❌</span> Erreur lors de la récupération';
+                button.style.background = '#dc2626';
+                button.disabled = false;
                 
-                document.getElementById('smartlinkTitle').value = fetchedMetadata.title;
-                document.getElementById('artistName').value = fetchedMetadata.artist;
-                document.getElementById('artworkUrl').value = fetchedMetadata.artwork;
-                
-                displayMetadataPreview({
-                    title: fetchedMetadata.title,
-                    artist: fetchedMetadata.artist,
-                    artwork: fetchedMetadata.artwork
-                }, fetchedMetadata.platforms);
-                
-                displayPlatformsFound(fetchedMetadata.platforms);
-                
-                button.innerHTML = '<span>⚠️</span> Mode démo - 4 plateformes simulées';
-                button.style.background = '#f59e0b';
-                
-                setTimeout(() => {
-                    nextStep();
-                }, 1500);
+                // Afficher l'erreur à l'utilisateur
+                alert(`Impossible de récupérer les métadonnées: ${error.message}\n\nVérifiez que l'URL est valide et réessayez.`);
             }
         }
 
@@ -1121,13 +1096,27 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // TODO: Ajouter authentification si nécessaire
+                        // Note: Authentication should be handled by admin login
                     },
                     body: JSON.stringify(smartLinkData)
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Erreur API: ${response.status}`);
+                    let errorMessage = `Erreur API ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (e) {
+                        // Keep default error message
+                    }
+                    
+                    if (response.status === 401) {
+                        errorMessage = 'Authentification requise. Veuillez vous connecter en tant qu\'administrateur.';
+                    } else if (response.status === 403) {
+                        errorMessage = 'Accès refusé. Permissions insuffisantes.';
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
 
                 const result = await response.json();
