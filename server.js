@@ -89,7 +89,7 @@ app.post('/api/proxy/login', async (req, res) => {
   try {
     console.log(`🔄 Proxying admin login`);
     
-    const loginUrl = 'https://api.mdmcmusicads.com/api/auth/login';
+    const loginUrl = 'https://api.mdmcmusicads.com/api/v1/auth/login';
     
     const response = await fetch(loginUrl, {
       method: 'POST',
