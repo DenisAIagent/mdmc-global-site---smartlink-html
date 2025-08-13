@@ -877,23 +877,26 @@
             button.disabled = true;
 
             try {
-                // Appel direct à l'API Odesli publique
-                const odesliUrl = `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(sourceUrl)}`;
+                // Appel au backend MDMC pour éviter CORS
+                const backendUrl = `https://api.mdmcmusicads.com/api/v1/smartlinks/fetch-metadata?url=${encodeURIComponent(sourceUrl)}`;
                 
-                const response = await fetch(odesliUrl);
+                const response = await fetch(backendUrl);
                 
                 if (!response.ok) {
-                    throw new Error('Erreur lors de la récupération Odesli');
+                    throw new Error('Erreur lors de la récupération des métadonnées');
                 }
 
-                const odesliData = await response.json();
+                const backendResponse = await response.json();
                 
-                if (odesliData && odesliData.linksByPlatform) {
-                    // Extraire les métadonnées depuis Odesli
-                    const metadata = extractMetadataFromOdesli(odesliData);
+                if (backendResponse.success && backendResponse.data) {
+                    const odesliData = backendResponse.data;
                     
-                    // Extraire les liens des plateformes
-                    const platformLinks = extractPlatformLinksFromOdesli(odesliData);
+                    if (odesliData && odesliData.linksByPlatform) {
+                        // Extraire les métadonnées depuis Odesli
+                        const metadata = extractMetadataFromOdesli(odesliData);
+                        
+                        // Extraire les liens des plateformes
+                        const platformLinks = extractPlatformLinksFromOdesli(odesliData);
                     
                     // Stocker les données récupérées
                     fetchedMetadata = {
@@ -914,21 +917,24 @@
                         document.getElementById('artworkUrl').value = metadata.artwork;
                     }
                     
-                    // Afficher la prévisualisation des données
-                    displayMetadataPreview(metadata, platformLinks);
-                    
-                    // Afficher les plateformes trouvées
-                    displayPlatformsFound(platformLinks);
-                    
-                    button.innerHTML = `<span>✅</span> ${platformLinks.length} plateformes trouvées`;
-                    button.style.background = '#10b981';
-                    
-                    // Auto-passer à l'étape suivante après 1.5s
-                    setTimeout(() => {
-                        nextStep();
-                    }, 1500);
+                        // Afficher la prévisualisation des données
+                        displayMetadataPreview(metadata, platformLinks);
+                        
+                        // Afficher les plateformes trouvées
+                        displayPlatformsFound(platformLinks);
+                        
+                        button.innerHTML = `<span>✅</span> ${platformLinks.length} plateformes trouvées`;
+                        button.style.background = '#10b981';
+                        
+                        // Auto-passer à l'étape suivante après 1.5s
+                        setTimeout(() => {
+                            nextStep();
+                        }, 1500);
+                    } else {
+                        throw new Error('Aucune donnée trouvée pour cette URL');
+                    }
                 } else {
-                    throw new Error('Aucune donnée trouvée pour cette URL');
+                    throw new Error(backendResponse.error || 'Erreur backend');
                 }
             } catch (error) {
                 console.error('Erreur Odesli:', error);
