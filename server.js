@@ -130,64 +130,80 @@ app.post('/api/proxy/login', async (req, res) => {
   }
 });
 
-// CORS Proxy pour upload audio (multipart/form-data)
+// CORS Proxy pour upload audio (avec support multipart)
 app.post('/api/upload/audio', (req, res) => {
-  console.log(`🔄 Proxying audio upload`);
-  console.log(`📝 Request headers:`, req.headers);
-  
-  const backendUrl = 'https://api.mdmcmusicads.com/api/v1/upload/audio';
-  const adminToken = req.headers['authorization'] || req.headers['x-admin-token'];
-  
-  // Préparer les headers pour le backend
-  const headers = {};
-  
-  // Transférer Content-Type (multipart/form-data avec boundary)
-  if (req.headers['content-type']) {
-    headers['Content-Type'] = req.headers['content-type'];
-  }
-  
-  // Ajouter l'authentification
-  if (adminToken) {
-    headers['Authorization'] = adminToken.startsWith('Bearer ') ? adminToken : `Bearer ${adminToken}`;
-    console.log(`🔑 Adding admin token to upload request`);
-  } else {
-    console.warn(`⚠️ No admin token found in upload request`);
-  }
-  
-  // Créer une requête proxy directe en streaming
-  const https = require('https');
-  const { URL } = require('url');
-  const backendURL = new URL(backendUrl);
-  
-  const options = {
-    hostname: backendURL.hostname,
-    port: backendURL.port || 443,
-    path: backendURL.pathname,
-    method: 'POST',
-    headers: headers
-  };
-  
-  const proxyReq = https.request(options, (proxyRes) => {
-    console.log(`✅ Backend upload response status:`, proxyRes.statusCode);
+  try {
+    console.log(`🔄 Proxying audio upload`);
+    console.log(`📝 Content-Type:`, req.headers['content-type']);
     
-    // Transférer les headers de réponse
-    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    const adminToken = req.headers['authorization'] || req.headers['x-admin-token'];
+    console.log(`🔑 Admin token present:`, !!adminToken);
     
-    // Transférer le body de réponse
-    proxyRes.pipe(res);
-  });
-  
-  proxyReq.on('error', (error) => {
+    if (!adminToken) {
+      console.warn(`⚠️ No admin token found in upload request`);
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required for audio upload'
+      });
+    }
+    
+    // Utiliser http-proxy-middleware ou une approche plus simple
+    const backendUrl = 'https://api.mdmcmusicads.com/api/v1/upload/audio';
+    
+    // Collecter les chunks de données
+    const chunks = [];
+    req.on('data', (chunk) => {
+      chunks.push(chunk);
+    });
+    
+    req.on('end', async () => {
+      try {
+        const buffer = Buffer.concat(chunks);
+        
+        const response = await fetch(backendUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': req.headers['content-type'],
+            'Authorization': adminToken.startsWith('Bearer ') ? adminToken : `Bearer ${adminToken}`,
+            'Content-Length': buffer.length.toString()
+          },
+          body: buffer
+        });
+        
+        const data = await response.text();
+        console.log(`✅ Backend upload response:`, response.status);
+        
+        res.status(response.status);
+        res.setHeader('Content-Type', response.headers.get('content-type') || 'application/json');
+        res.end(data);
+        
+      } catch (error) {
+        console.error('❌ Upload request failed:', error);
+        res.status(500).json({
+          success: false,
+          error: 'Backend upload failed',
+          details: error.message
+        });
+      }
+    });
+    
+    req.on('error', (error) => {
+      console.error('❌ Upload stream error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Upload stream failed',
+        details: error.message
+      });
+    });
+    
+  } catch (error) {
     console.error('❌ Audio upload proxy error:', error);
     res.status(500).json({
       success: false,
       error: 'Upload proxy failed',
       details: error.message
     });
-  });
-  
-  // Transférer le body de la requête (FormData) directement
-  req.pipe(proxyReq);
+  }
 });
 
 // CORS Proxy pour suppression audio
