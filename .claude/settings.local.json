@@ -45,7 +45,9 @@
       "WebFetch(domain:developers.facebook.com)",
       "Bash(node:*)",
       "Bash(find:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(git remote set-url:*)"
     ],
     "deny": []
   }
