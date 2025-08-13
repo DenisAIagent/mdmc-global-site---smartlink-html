@@ -98,29 +98,73 @@
         <h1>Admin MDMC</h1>
         <p class="subtitle">Redirection vers le panneau d'administration</p>
         
-        <div class="loading-message">
+        <div id="loadingMessage" class="loading-message" style="display: none;">
             <div class="spinner"></div>
-            <p>Redirection en cours...</p>
+            <p>Connexion en cours...</p>
         </div>
+
+        <form id="loginForm" onsubmit="return false;">
+            <div style="margin-bottom: 20px;">
+                <input 
+                    type="email" 
+                    id="email" 
+                    placeholder="Email administrateur"
+                    value="admin@mdmcmusicads.com"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;"
+                    required
+                >
+            </div>
+            <div style="margin-bottom: 30px;">
+                <input 
+                    type="password" 
+                    id="password" 
+                    placeholder="Mot de passe"
+                    value="admin123"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;"
+                    required
+                >
+            </div>
+            <button 
+                type="submit" 
+                onclick="loginAdmin()"
+                style="width: 100%; padding: 14px; background: #E50914; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;"
+            >
+                Se connecter
+            </button>
+        </form>
     </div>
 
     <script>
-        // Authentification admin avec login API
-        async function loginAdmin() {
-            let adminToken = localStorage.getItem('adminToken');
-            
+        // Vérifier token existant au chargement
+        window.onload = function() {
+            const adminToken = localStorage.getItem('adminToken');
             if (adminToken) {
                 // Token existe déjà, redirection directe
-                window.location.href = 'dashboard.html';
+                document.getElementById('loadingMessage').style.display = 'block';
+                document.getElementById('loginForm').style.display = 'none';
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+            } else {
+                // Afficher le formulaire de connexion
+                document.getElementById('loginForm').style.display = 'block';
+            }
+        };
+
+        // Authentification admin avec login API
+        async function loginAdmin() {
+            // Récupérer les valeurs du formulaire
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Veuillez remplir tous les champs');
                 return;
             }
 
-            // Demander les identifiants
-            const email = prompt('Email administrateur:', 'admin@mdmcmusicads.com');
-            if (!email) return;
-            
-            const password = prompt('Mot de passe:', 'admin123');
-            if (!password) return;
+            // Afficher loading
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('loginForm').style.display = 'none';
 
             try {
                 // Login via proxy local pour éviter CORS
@@ -133,6 +177,7 @@
                 });
 
                 const loginData = await loginResponse.json();
+                console.log('Login response:', loginData);
 
                 if (loginData.success && loginData.token) {
                     // Stocker le token JWT
@@ -145,11 +190,12 @@
             } catch (error) {
                 alert('Erreur de connexion: ' + error.message);
                 console.error('Login error:', error);
+                
+                // Réafficher le formulaire en cas d'erreur
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
             }
         }
-        
-        // Lancer la connexion au chargement
-        loginAdmin();
     </script>
 </body>
 </html>
