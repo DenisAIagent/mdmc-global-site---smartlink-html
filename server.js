@@ -41,7 +41,7 @@ app.get('/health', (req, res) => {
 // Ajouter les routes API pour SmartLinks
 addSmartLinksApiRoutes(app);
 
-// CORS Proxy pour backend MDMC (solution temporaire)
+// CORS Proxy pour Odesli API (contournement direct)
 app.get('/api/proxy/fetch-metadata', async (req, res) => {
   try {
     const { url } = req.query;
@@ -49,21 +49,36 @@ app.get('/api/proxy/fetch-metadata', async (req, res) => {
       return res.status(400).json({ error: 'URL parameter required' });
     }
 
-    console.log(`🔄 Proxying metadata request for: ${url}`);
+    console.log(`🔄 Direct Odesli request for: ${url}`);
     
-    const backendUrl = `https://api.mdmcmusicads.com/api/v1/smartlinks/fetch-metadata?url=${encodeURIComponent(url)}`;
+    // Appel direct à l'API Odesli publique (pas d'authentification requise)
+    const odesliUrl = `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(url)}`;
     
-    const response = await fetch(backendUrl);
-    const data = await response.json();
+    const response = await fetch(odesliUrl);
     
-    console.log(`✅ Proxy response:`, data.success ? 'Success' : 'Failed');
+    if (!response.ok) {
+      throw new Error(`Odesli API error: ${response.status} ${response.statusText}`);
+    }
     
-    res.json(data);
+    const odesliData = await response.json();
+    
+    // Formater la réponse pour correspondre au format attendu par le frontend
+    if (odesliData && odesliData.linksByPlatform) {
+      console.log(`✅ Odesli success: ${Object.keys(odesliData.linksByPlatform).length} platforms found`);
+      
+      res.json({
+        success: true,
+        data: odesliData
+      });
+    } else {
+      throw new Error('No platform links found in Odesli response');
+    }
+    
   } catch (error) {
-    console.error('❌ Proxy error:', error);
+    console.error('❌ Odesli proxy error:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Proxy fetch failed',
+      error: 'Failed to fetch metadata from Odesli',
       details: error.message 
     });
   }
