@@ -877,10 +877,10 @@
             button.disabled = true;
 
             try {
-                // Appel au backend MDMC pour éviter CORS
-                const backendUrl = `https://api.mdmcmusicads.com/api/v1/smartlinks/fetch-metadata?url=${encodeURIComponent(sourceUrl)}`;
+                // Appel au proxy local pour éviter CORS
+                const proxyUrl = `/api/proxy/fetch-metadata?url=${encodeURIComponent(sourceUrl)}`;
                 
-                const response = await fetch(backendUrl);
+                const response = await fetch(proxyUrl);
                 
                 if (!response.ok) {
                     throw new Error('Erreur lors de la récupération des métadonnées');

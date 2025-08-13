@@ -41,6 +41,34 @@ app.get('/health', (req, res) => {
 // Ajouter les routes API pour SmartLinks
 addSmartLinksApiRoutes(app);
 
+// CORS Proxy pour backend MDMC (solution temporaire)
+app.get('/api/proxy/fetch-metadata', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) {
+      return res.status(400).json({ error: 'URL parameter required' });
+    }
+
+    console.log(`🔄 Proxying metadata request for: ${url}`);
+    
+    const backendUrl = `https://api.mdmcmusicads.com/api/v1/smartlinks/fetch-metadata?url=${encodeURIComponent(url)}`;
+    
+    const response = await fetch(backendUrl);
+    const data = await response.json();
+    
+    console.log(`✅ Proxy response:`, data.success ? 'Success' : 'Failed');
+    
+    res.json(data);
+  } catch (error) {
+    console.error('❌ Proxy error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Proxy fetch failed',
+      details: error.message 
+    });
+  }
+});
+
 // Routes pour admin HTML (avant le catch-all React)
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin/index.html'));
