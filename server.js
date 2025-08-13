@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { addSmartLinksApiRoutes } from './server-smartlinks-api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,10 +38,27 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
+// Ajouter les routes API pour SmartLinks
+addSmartLinksApiRoutes(app);
+
+// Routes pour admin HTML (avant le catch-all React)
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/admin/index.html'));
+});
+
+app.get('/admin/*', (req, res) => {
+  const filePath = path.join(__dirname, 'public', req.path);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      res.sendFile(path.join(__dirname, 'public/admin/dashboard.html'));
+    }
+  });
+});
+
 // Route pour servir les pages statiques SmartLinks
 app.get('/sl/:shortId.html', (req, res) => {
   const { shortId } = req.params;
-  const staticPagePath = path.join(__dirname, 'dist', 'sl', `${shortId}.html`);
+  const staticPagePath = path.join(__dirname, 'public', 'sl', `${shortId}.html`);
   
   console.log(`📄 Serving static SmartLink page: /sl/${shortId}.html`);
   
