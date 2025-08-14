@@ -1163,12 +1163,12 @@
                     try {
                         console.log('🔨 Génération HTML statique...');
                         console.log('📊 Données envoyées pour génération:', {
-                            trackTitle: result.data.trackTitle || result.data.title,
-                            artistName: result.data.artistName || result.data.artist?.name,
-                            coverImageUrl: result.data.coverImageUrl || result.data.artwork,
-                            shortId: result.data.shortId || result.data.id,
-                            customDescription: result.data.description,
-                            platformLinks: result.data.platformLinks || []
+                            trackTitle: result.data.trackTitle || result.data.title || result.data.name || 'Track',
+                            artistName: result.data.artistName || result.data.artist?.name || result.data.artist || 'Artist', 
+                            coverImageUrl: result.data.coverImageUrl || result.data.artwork || result.data.cover || result.data.image,
+                            shortId: result.data.shortId || result.data.id || result.data._id || result.data.slug,
+                            customDescription: result.data.description || result.data.customDescription,
+                            platformLinks: result.data.platformLinks || result.data.platforms || result.data.links || []
                         });
                         
                         const htmlResponse = await fetch('/api/generate/smartlink-html', {
@@ -1177,12 +1177,12 @@
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
-                                trackTitle: result.data.trackTitle || result.data.title,
-                                artistName: result.data.artistName || result.data.artist?.name,
-                                coverImageUrl: result.data.coverImageUrl || result.data.artwork,
-                                shortId: result.data.shortId || result.data.id,
-                                customDescription: result.data.description,
-                                platformLinks: result.data.platformLinks || []
+                                trackTitle: result.data.trackTitle || result.data.title || result.data.name || 'Track',
+                                artistName: result.data.artistName || result.data.artist?.name || result.data.artist || 'Artist', 
+                                coverImageUrl: result.data.coverImageUrl || result.data.artwork || result.data.cover || result.data.image,
+                                shortId: result.data.shortId || result.data.id || result.data._id || result.data.slug,
+                                customDescription: result.data.description || result.data.customDescription,
+                                platformLinks: result.data.platformLinks || result.data.platforms || result.data.links || []
                             })
                         });
                         
