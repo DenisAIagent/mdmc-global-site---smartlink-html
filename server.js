@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { addSmartLinksApiRoutes } from './server-smartlinks-api.js';
+import { generateStaticHTML } from './src/utils/staticPageGenerator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -571,9 +572,7 @@ app.get('/smartlink/:artist/:track.html', async (req, res) => {
       ]
     };
 
-    // Génération HTML à la volée
-    const generatorModule = await import('./src/utils/staticPageGenerator.js');
-    const { generateStaticHTML } = generatorModule;
+    // Génération HTML directe (sans import dynamique qui pose problème sur Railway)
     const html = generateStaticHTML(smartlinkData);
     
     console.log(`✅ Dynamic HTML generated for ${artist}/${track}`);
@@ -583,7 +582,7 @@ app.get('/smartlink/:artist/:track.html', async (req, res) => {
     res.send(html);
     
   } catch (error) {
-    console.error(`❌ Error generating SmartLink page:`, error);
+    console.error(`❌ Exception HTML generation:`, error);
     // Fallback vers React
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   }
