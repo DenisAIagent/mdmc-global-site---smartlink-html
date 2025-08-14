@@ -1152,6 +1152,42 @@
                     
                     document.getElementById('generatedUrl').textContent = generatedUrl;
                     
+                    // Générer automatiquement la page HTML statique
+                    try {
+                        console.log('🔨 Génération HTML statique...');
+                        
+                        const htmlResponse = await fetch('/api/generate/smartlink-html', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                trackTitle: result.data.trackTitle || result.data.title,
+                                artistName: result.data.artistName || result.data.artist?.name,
+                                coverImageUrl: result.data.coverImageUrl || result.data.artwork,
+                                shortId: result.data.shortId || result.data.id,
+                                customDescription: result.data.description,
+                                platformLinks: result.data.platformLinks || []
+                            })
+                        });
+                        
+                        const htmlResult = await htmlResponse.json();
+                        
+                        if (htmlResult.success) {
+                            console.log('✅ Page HTML statique générée:', htmlResult.url);
+                            // Utiliser l'URL statique générée au lieu de l'URL React
+                            const finalUrl = htmlResult.url;
+                            document.getElementById('generatedUrl').textContent = finalUrl;
+                        } else {
+                            console.warn('⚠️ Erreur génération HTML:', htmlResult.error);
+                            // Continuer avec l'URL par défaut
+                        }
+                        
+                    } catch (htmlError) {
+                        console.warn('⚠️ Erreur génération HTML statique:', htmlError);
+                        // Continuer avec l'URL par défaut si la génération HTML échoue
+                    }
+                    
                     currentStep = 3;
                     updateSteps();
                     

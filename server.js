@@ -141,8 +141,10 @@ app.get('/api/proxy/fetch-metadata', async (req, res) => {
   }
 });
 
+// Middleware pour parser les JSON (requis pour tous les endpoints POST)
+app.use(express.json({ limit: '10mb' }));
+
 // CORS Proxy pour login admin
-app.use(express.json()); // Assurer que le body est parsé
 app.post('/api/proxy/login', async (req, res) => {
   try {
     console.log(`🔄 Proxying admin login`);
@@ -537,6 +539,63 @@ app.get('/sl/:shortId.html', (req, res) => {
     console.log(`❌ Static page not found: ${staticPagePath}`);
     // Fallback vers l'application React
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  }
+});
+
+// Endpoint pour générer des pages HTML statiques SmartLinks
+app.post('/api/generate/smartlink-html', async (req, res) => {
+  try {
+    console.log('🔨 Generating static HTML for SmartLink');
+    console.log('📝 Data received:', req.body);
+    
+    const smartlinkData = req.body;
+    const { shortId } = smartlinkData;
+    
+    if (!shortId) {
+      return res.status(400).json({
+        success: false,
+        error: 'shortId is required for HTML generation'
+      });
+    }
+    
+    // Import du générateur HTML
+    const { generateStaticHTML } = await import('./src/utils/staticPageGenerator.js');
+    
+    // Générer le HTML
+    const html = generateStaticHTML(smartlinkData);
+    
+    // Créer le dossier sl s'il n'existe pas
+    const slDir = path.join(__dirname, 'public', 'sl');
+    if (!fs.existsSync(slDir)) {
+      fs.mkdirSync(slDir, { recursive: true });
+      console.log('📁 Created /public/sl directory');
+    }
+    
+    // Écrire le fichier HTML
+    const fileName = `${shortId}.html`;
+    const filePath = path.join(slDir, fileName);
+    
+    fs.writeFileSync(filePath, html, 'utf8');
+    
+    const publicUrl = `https://www.mdmcmusicads.com/sl/${fileName}`;
+    
+    console.log(`✅ Static HTML generated: ${filePath}`);
+    console.log(`🌐 Public URL: ${publicUrl}`);
+    
+    res.json({
+      success: true,
+      filePath: `/public/sl/${fileName}`,
+      url: publicUrl,
+      message: 'Static HTML page generated successfully'
+    });
+    
+  } catch (error) {
+    console.error('❌ HTML generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate static HTML',
+      details: error.message
+    });
   }
 });
 
