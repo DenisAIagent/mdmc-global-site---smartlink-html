@@ -487,6 +487,21 @@ app.post('/api/proxy/create-smartlink', async (req, res) => {
     
     console.log(`✅ SmartLink creation response:`, response.status, data.success ? 'Success' : 'Failed');
     
+    // SIMPLIFICATION : Juste ajouter l'URL prédictible du SmartLink
+    if (response.ok && data.success && data.data) {
+      const artistSlug = (data.data.artistName || 'unknown').toLowerCase()
+        .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      const trackSlug = (data.data.trackTitle || 'untitled').toLowerCase()
+        .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      
+      const staticUrl = `https://www.mdmcmusicads.com/${artistSlug}/${trackSlug}.html`;
+      
+      // Ajouter l'URL statique à la réponse
+      data.data.staticUrl = staticUrl;
+      
+      console.log(`🔗 SmartLink URL: ${staticUrl}`);
+    }
+    
     // Transférer le status code et les données
     res.status(response.status).json(data);
     
@@ -524,109 +539,51 @@ app.get('/admin/*', (req, res) => {
   });
 });
 
-// Route pour servir les pages statiques SmartLinks avec format /artiste/track.html
-app.get('/:artist/:track.html', (req, res) => {
+// Route pour servir les pages SmartLinks avec génération dynamique
+app.get('/:artist/:track.html', async (req, res) => {
   const { artist, track } = req.params;
-  const staticPagePath = path.join(__dirname, 'public', artist, `${track}.html`);
   
-  console.log(`📄 Serving static SmartLink page: /${artist}/${track}.html`);
+  console.log(`📄 SmartLink request: /${artist}/${track}.html`);
   
-  // Vérifier si la page statique existe
-  if (fs.existsSync(staticPagePath)) {
-    console.log(`✅ Static page found: ${staticPagePath}`);
-    res.sendFile(staticPagePath);
-  } else {
-    console.log(`❌ Static page not found: ${staticPagePath}`);
-    // Fallback vers l'application React
+  try {
+    // Données SmartLink de démonstration (remplacer par vraie data depuis DB)
+    const smartlinkData = {
+      shortId: `${artist}-${track}`,
+      artistName: artist.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      trackTitle: track.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      coverImageUrl: 'https://i.scdn.co/image/ab67616d0000b273demo',
+      customDescription: `Écoutez ${track.replace(/-/g, ' ')} de ${artist.replace(/-/g, ' ')}`,
+      platformLinks: [
+        {
+          platform: 'Spotify',
+          url: 'https://open.spotify.com/track/demo'
+        },
+        {
+          platform: 'Apple Music', 
+          url: 'https://music.apple.com/demo'
+        }
+      ]
+    };
+
+    // Génération HTML à la volée
+    const generatorModule = await import('./src/utils/staticPageGenerator.js');
+    const { generateStaticHTML } = generatorModule;
+    const html = generateStaticHTML(smartlinkData);
+    
+    console.log(`✅ Dynamic HTML generated for ${artist}/${track}`);
+    
+    // Servir le HTML directement
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+    
+  } catch (error) {
+    console.error(`❌ Error generating SmartLink page:`, error);
+    // Fallback vers React
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   }
 });
 
-// Endpoint pour générer des pages HTML statiques SmartLinks
-app.post('/api/generate/smartlink-html', async (req, res) => {
-  try {
-    console.log('🔨 Generating static HTML for SmartLink');
-    console.log('📝 Data received:', req.body);
-    
-    const smartlinkData = req.body;
-    const { shortId } = smartlinkData;
-    
-    if (!shortId) {
-      return res.status(400).json({
-        success: false,
-        error: 'shortId is required for HTML generation'
-      });
-    }
-    
-    // Import du générateur HTML (conversion pour CommonJS)
-    const generatorModule = await import('./src/utils/staticPageGenerator.js');
-    const { generateStaticHTML } = generatorModule;
-    
-    // Générer le HTML
-    const html = generateStaticHTML(smartlinkData);
-    
-    // Créer le dossier sl s'il n'existe pas
-    const slDir = path.join(__dirname, 'public', 'sl');
-    if (!fs.existsSync(slDir)) {
-      fs.mkdirSync(slDir, { recursive: true });
-      console.log('📁 Created /public/sl directory');
-    }
-    
-    // Générer les slugs pour l'URL
-    const artistSlug = smartlinkData.artistName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    const trackSlug = smartlinkData.trackTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    
-    // Créer le dossier artistSlug s'il n'existe pas
-    const artistDir = path.join(__dirname, 'public', artistSlug);
-    if (!fs.existsSync(artistDir)) {
-      fs.mkdirSync(artistDir, { recursive: true });
-      console.log(`📁 Created /${artistSlug} directory`);
-    }
-    
-    // Écrire le fichier HTML avec le format /artiste/track.html
-    const fileName = `${trackSlug}.html`;
-    const filePath = path.join(artistDir, fileName);
-    
-    console.log(`💾 Writing HTML file to: ${filePath}`);
-    console.log(`📏 HTML length: ${html.length} characters`);
-    
-    try {
-      fs.writeFileSync(filePath, html, 'utf8');
-      console.log(`✅ File successfully written to disk`);
-      
-      // Vérifier que le fichier existe
-      if (fs.existsSync(filePath)) {
-        const stats = fs.statSync(filePath);
-        console.log(`📊 File size: ${stats.size} bytes`);
-      } else {
-        console.error(`❌ File was not created: ${filePath}`);
-      }
-    } catch (writeError) {
-      console.error(`❌ Error writing file:`, writeError);
-      throw writeError;
-    }
-    
-    const publicUrl = `https://www.mdmcmusicads.com/${artistSlug}/${trackSlug}.html`;
-    
-    console.log(`✅ Static HTML generated: ${filePath}`);
-    console.log(`🌐 Public URL: ${publicUrl}`);
-    
-    res.json({
-      success: true,
-      filePath: `/public/${artistSlug}/${fileName}`,
-      url: publicUrl,
-      message: 'Static HTML page generated successfully'
-    });
-    
-  } catch (error) {
-    console.error('❌ HTML generation error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate static HTML',
-      details: error.message
-    });
-  }
-});
+// ENDPOINT SUPPRIMÉ - Génération simplifiée via route directe
 
 // Route catch-all pour l'application React (SPA routing)
 app.get('*', (req, res) => {
