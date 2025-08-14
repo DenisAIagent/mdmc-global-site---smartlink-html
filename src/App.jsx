@@ -38,6 +38,7 @@ import Reviews from './components/sections/Reviews';
 import Contact from './components/sections/Contact';
 import AllReviews from './components/pages/AllReviews';
 import ArtistPage from './pages/public/ArtistPage';
+import ShortLinkPage from './pages/public/ShortLinkPage';
 
 // Pages de ressources légales
 import FAQ from './pages/public/resources/FAQ';

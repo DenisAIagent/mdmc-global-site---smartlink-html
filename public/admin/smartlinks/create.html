@@ -780,7 +780,7 @@
                         Partagez ce lien partout ! Vos fans seront automatiquement redirigés vers leur plateforme préférée.
                     </p>
                     <p style="color: var(--gray-medium); font-size: 14px; margin-top: 8px;">
-                        Format: https://www.mdmcmusicads.com/#/smartlinks/artiste/titre
+                        Format: https://www.mdmcmusicads.com/sl/shortId.html
                     </p>
                 </div>
             </div>
@@ -1143,10 +1143,12 @@
                     const artistSlug = result.data.artistSlug || result.data.artist?.slug || 'artist';
                     const trackSlug = result.data.slug || result.data.trackSlug || 'track';
                     
-                    const generatedUrl = `https://www.mdmcmusicads.com/#/smartlinks/${artistSlug}/${trackSlug}`;
+                    // Utiliser l'URL retournée par le backend (fichier HTML statique)
+                    const generatedUrl = result.data.url || result.data.smartlink?.url || `https://www.mdmcmusicads.com/sl/${result.data.shortId || result.data.id}.html`;
                     
                     console.log('✅ SmartLink généré:', generatedUrl);
                     console.log('📊 Données reçues:', result.data);
+                    console.log('🔗 URL finale:', generatedUrl);
                     
                     document.getElementById('generatedUrl').textContent = generatedUrl;
                     
