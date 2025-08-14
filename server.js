@@ -494,7 +494,7 @@ app.post('/api/proxy/create-smartlink', async (req, res) => {
       const trackSlug = (data.data.trackTitle || 'untitled').toLowerCase()
         .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
       
-      const staticUrl = `https://www.mdmcmusicads.com/${artistSlug}/${trackSlug}.html`;
+      const staticUrl = `https://www.mdmcmusicads.com/smartlink/${artistSlug}/${trackSlug}.html`;
       
       // Ajouter l'URL statique à la réponse
       data.data.staticUrl = staticUrl;
@@ -539,8 +539,8 @@ app.get('/admin/*', (req, res) => {
   });
 });
 
-// Route pour servir les pages SmartLinks avec génération dynamique
-app.get('/:artist/:track.html', async (req, res) => {
+// Route pour servir les pages SmartLinks avec génération dynamique (plus spécifique)  
+app.get('/smartlink/:artist/:track.html', async (req, res) => {
   const { artist, track } = req.params;
   
   console.log(`📄 SmartLink request: /${artist}/${track}.html`);
