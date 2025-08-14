@@ -1150,11 +1150,26 @@
                     console.log('📊 Données reçues:', result.data);
                     console.log('🔗 URL finale:', generatedUrl);
                     
-                    document.getElementById('generatedUrl').textContent = generatedUrl;
+                    const urlElement = document.getElementById('generatedUrl');
+                    console.log('🔍 URL Element found:', !!urlElement);
+                    if (urlElement) {
+                        urlElement.textContent = generatedUrl;
+                        console.log('✅ URL set to element:', generatedUrl);
+                    } else {
+                        console.error('❌ Element generatedUrl not found!');
+                    }
                     
                     // Générer automatiquement la page HTML statique
                     try {
                         console.log('🔨 Génération HTML statique...');
+                        console.log('📊 Données envoyées pour génération:', {
+                            trackTitle: result.data.trackTitle || result.data.title,
+                            artistName: result.data.artistName || result.data.artist?.name,
+                            coverImageUrl: result.data.coverImageUrl || result.data.artwork,
+                            shortId: result.data.shortId || result.data.id,
+                            customDescription: result.data.description,
+                            platformLinks: result.data.platformLinks || []
+                        });
                         
                         const htmlResponse = await fetch('/api/generate/smartlink-html', {
                             method: 'POST',
@@ -1171,21 +1186,28 @@
                             })
                         });
                         
+                        console.log('📡 HTML Response status:', htmlResponse.status);
                         const htmlResult = await htmlResponse.json();
+                        console.log('📄 HTML Response data:', htmlResult);
                         
                         if (htmlResult.success) {
                             console.log('✅ Page HTML statique générée:', htmlResult.url);
                             // Utiliser l'URL statique générée au lieu de l'URL React
                             const finalUrl = htmlResult.url;
                             document.getElementById('generatedUrl').textContent = finalUrl;
+                            console.log('🔗 URL finale mise à jour:', finalUrl);
                         } else {
-                            console.warn('⚠️ Erreur génération HTML:', htmlResult.error);
-                            // Continuer avec l'URL par défaut
+                            console.error('❌ Erreur génération HTML:', htmlResult.error, htmlResult.details);
+                            alert('⚠️ Erreur génération page HTML: ' + htmlResult.error);
+                            // Afficher l'URL par défaut quand même
+                            console.log('📍 Using fallback URL:', generatedUrl);
                         }
                         
                     } catch (htmlError) {
-                        console.warn('⚠️ Erreur génération HTML statique:', htmlError);
-                        // Continuer avec l'URL par défaut si la génération HTML échoue
+                        console.error('❌ Exception génération HTML statique:', htmlError);
+                        alert('⚠️ Exception HTML generation: ' + htmlError.message);
+                        // Afficher l'URL par défaut quand même
+                        console.log('📍 Using fallback URL after exception:', generatedUrl);
                     }
                     
                     currentStep = 3;
