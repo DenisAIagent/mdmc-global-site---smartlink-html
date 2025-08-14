@@ -9,6 +9,7 @@
         "build": "rm -rf dist && rm -f dist/index.html && vite build",
         "build:complete": "npm run build && node -e \"import('./simple-smartlink-solution.js').then(m => m.buildStaticSmartlinks())\"",
         "start": "node server.js",
+        "start:production": "NODE_ENV=production node server.js",
         "start:simple": "node -e \"import('./simple-smartlink-solution.js').then(m => m.createSimpleServer())\"",
         "start:integrated": "node smartlinks-api-server.cjs",
         "install:upload": "node install-upload-deps.cjs",

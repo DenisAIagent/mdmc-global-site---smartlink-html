@@ -3,11 +3,17 @@ builder = "nixpacks"
 buildCommand = "npm run build"
 
 [deploy]
-startCommand = "npm run start"
+startCommand = "npm run start:production"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3
 
 [env]
 NODE_ENV = "production"
 VITE_MODE = "production"
 PORT = "3000"
+
+# Forcer Railway à utiliser notre serveur Express.js, pas le serveur statique
+[build.env]
+RAILWAY_RUN_UID = "1001"

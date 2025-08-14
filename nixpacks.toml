@@ -1,0 +1,20 @@
+# Configuration Nixpacks pour Railway
+# Force l'utilisation de Node.js avec Express.js au lieu du service statique
+
+[phases.setup]
+nixPkgs = ['nodejs_18', 'npm']
+
+[phases.build]
+cmds = ['npm ci', 'npm run build']
+
+[phases.start]
+cmd = 'npm run start:production'
+
+[variables]
+NODE_ENV = 'production'
+NIXPACKS_NO_CACHE = '1'
+
+# Important: Ne pas détecter comme site statique
+[providers]
+node = { version = '18' }
+static = { disable = true }

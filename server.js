@@ -11,8 +11,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuration pour servir les fichiers statiques depuis le dossier dist
-app.use(express.static(path.join(__dirname, 'dist')));
+// IMPORTANT: Ne pas servir les fichiers statiques avant les routes SmartLinks
+// Déplacé après les routes SmartLinks pour éviter les conflits
 
 // Configuration des headers de sécurité et cache
 app.use((req, res, next) => {
@@ -546,49 +546,82 @@ app.get('/admin/*', (req, res) => {
   });
 });
 
-// Route pour servir les pages SmartLinks avec génération dynamique (plus spécifique)  
+// Route pour servir les pages SmartLinks avec génération dynamique (PRIORITÉ MAXIMALE - AVANT TOUT)  
 app.get('/smartlink/:artist/:track.html', async (req, res) => {
   const { artist, track } = req.params;
   
   console.log(`📄 SmartLink request: /${artist}/${track}.html`);
+  console.log(`🔍 User-Agent: ${req.headers['user-agent']}`);
+  console.log(`🌐 Referer: ${req.headers['referer']}`);
   
   try {
-    // Données SmartLink de démonstration (remplacer par vraie data depuis DB)
-    const smartlinkData = {
-      shortId: `${artist}-${track}`,
-      artistName: artist.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      trackTitle: track.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      coverImageUrl: 'https://i.scdn.co/image/ab67616d0000b273demo',
-      customDescription: `Écoutez ${track.replace(/-/g, ' ')} de ${artist.replace(/-/g, ' ')}`,
-      platformLinks: [
-        {
-          platform: 'Spotify',
-          url: 'https://open.spotify.com/track/demo'
-        },
-        {
-          platform: 'Apple Music', 
-          url: 'https://music.apple.com/demo'
+    // Essayer de récupérer les vraies données depuis l'API backend
+    let smartlinkData = null;
+    
+    try {
+      // Construire l'URL de recherche pour trouver le SmartLink
+      const searchUrl = `https://api.mdmcmusicads.com/api/v1/smartlinks/search?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}`;
+      console.log(`🔍 Recherche SmartLink: ${searchUrl}`);
+      
+      const response = await fetch(searchUrl, {
+        timeout: 5000,
+        headers: {
+          'User-Agent': 'MDMC-Static-Generator/1.0'
         }
-      ]
-    };
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          smartlinkData = result.data;
+          console.log(`✅ SmartLink trouvé: ${smartlinkData.artistName} - ${smartlinkData.trackTitle}`);
+        }
+      }
+    } catch (apiError) {
+      console.log(`⚠️ Impossible de récupérer depuis l'API: ${apiError.message}`);
+    }
+    
+    // Si pas de données depuis l'API, utiliser des données de démonstration
+    if (!smartlinkData) {
+      console.log(`📝 Utilisation données de démonstration pour ${artist}/${track}`);
+      smartlinkData = {
+        shortId: `${artist}-${track}`,
+        artistName: artist.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        trackTitle: track.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        coverImageUrl: 'https://i.scdn.co/image/ab67616d0000b273demo',
+        customDescription: `Écoutez ${track.replace(/-/g, ' ')} de ${artist.replace(/-/g, ' ')}`,
+        platformLinks: [
+          {
+            platform: 'Spotify',
+            url: 'https://open.spotify.com/track/demo'
+          },
+          {
+            platform: 'Apple Music', 
+            url: 'https://music.apple.com/demo'
+          }
+        ]
+      };
+    }
 
-    // Génération HTML directe (sans import dynamique qui pose problème sur Railway)
+    // Génération HTML directe
     const html = generateStaticHTML(smartlinkData);
     
     console.log(`✅ Dynamic HTML generated for ${artist}/${track}`);
+    console.log(`📊 HTML length: ${html.length} characters`);
     
-    // Servir le HTML directement
+    // Servir le HTML directement avec headers optimisés pour partage social
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=300'); // Cache 5 minutes
+    res.setHeader('X-SmartLink-Generated', 'true');
+    res.setHeader('X-Generated-Time', new Date().toISOString());
     res.send(html);
     
   } catch (error) {
     console.error(`❌ Exception HTML generation:`, error);
-    // Fallback vers React
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    // Fallback vers React avec erreur 500 pour debug
+    res.status(500).send(`SmartLink Generation Error: ${error.message}`);
   }
 });
-
-// ENDPOINT SUPPRIMÉ - Génération simplifiée via route directe
 
 // TEST ENDPOINT pour vérifier les déploiements
 app.get('/test-smartlink-generation', async (req, res) => {
@@ -598,7 +631,20 @@ app.get('/test-smartlink-generation', async (req, res) => {
   res.send('SUCCESS! Test endpoint is working. Deployment is active. Time: ' + new Date().toISOString());
 });
 
-// Route catch-all pour l'application React (SPA routing)
+// Configuration pour servir les fichiers statiques APRÈS les routes spécifiques
+app.use(express.static(path.join(__dirname, 'dist'), {
+  // Ne pas servir index.html automatiquement pour laisser les routes Express gérer
+  index: false,
+  // Exclure les routes smartlink des fichiers statiques
+  setHeaders: (res, path, stat) => {
+    // Cache pour les assets mais pas pour les pages
+    if (path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
+
+// Route catch-all pour l'application React (SPA routing) - DERNIÈRE PRIORITÉ
 app.get('*', (req, res) => {
   console.log(`📄 Serving React app for: ${req.path}`);
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));

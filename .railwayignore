@@ -1,0 +1,6 @@
+# Railway ignore - Ne pas détecter automatiquement comme site statique
+dist/index.html
+dist/assets/
+public/index.html
+# Forcer l'utilisation d'Express.js
+*.static
