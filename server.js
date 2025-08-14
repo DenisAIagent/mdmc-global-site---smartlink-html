@@ -524,12 +524,12 @@ app.get('/admin/*', (req, res) => {
   });
 });
 
-// Route pour servir les pages statiques SmartLinks
-app.get('/sl/:shortId.html', (req, res) => {
-  const { shortId } = req.params;
-  const staticPagePath = path.join(__dirname, 'public', 'sl', `${shortId}.html`);
+// Route pour servir les pages statiques SmartLinks avec format /artiste/track.html
+app.get('/:artist/:track.html', (req, res) => {
+  const { artist, track } = req.params;
+  const staticPagePath = path.join(__dirname, 'public', artist, `${track}.html`);
   
-  console.log(`📄 Serving static SmartLink page: /sl/${shortId}.html`);
+  console.log(`📄 Serving static SmartLink page: /${artist}/${track}.html`);
   
   // Vérifier si la page statique existe
   if (fs.existsSync(staticPagePath)) {
@@ -572,9 +572,20 @@ app.post('/api/generate/smartlink-html', async (req, res) => {
       console.log('📁 Created /public/sl directory');
     }
     
-    // Écrire le fichier HTML
-    const fileName = `${shortId}.html`;
-    const filePath = path.join(slDir, fileName);
+    // Générer les slugs pour l'URL
+    const artistSlug = smartlinkData.artistName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const trackSlug = smartlinkData.trackTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    
+    // Créer le dossier artistSlug s'il n'existe pas
+    const artistDir = path.join(__dirname, 'public', artistSlug);
+    if (!fs.existsSync(artistDir)) {
+      fs.mkdirSync(artistDir, { recursive: true });
+      console.log(`📁 Created /${artistSlug} directory`);
+    }
+    
+    // Écrire le fichier HTML avec le format /artiste/track.html
+    const fileName = `${trackSlug}.html`;
+    const filePath = path.join(artistDir, fileName);
     
     console.log(`💾 Writing HTML file to: ${filePath}`);
     console.log(`📏 HTML length: ${html.length} characters`);
@@ -595,14 +606,14 @@ app.post('/api/generate/smartlink-html', async (req, res) => {
       throw writeError;
     }
     
-    const publicUrl = `https://www.mdmcmusicads.com/sl/${fileName}`;
+    const publicUrl = `https://www.mdmcmusicads.com/${artistSlug}/${trackSlug}.html`;
     
     console.log(`✅ Static HTML generated: ${filePath}`);
     console.log(`🌐 Public URL: ${publicUrl}`);
     
     res.json({
       success: true,
-      filePath: `/public/sl/${fileName}`,
+      filePath: `/public/${artistSlug}/${fileName}`,
       url: publicUrl,
       message: 'Static HTML page generated successfully'
     });
