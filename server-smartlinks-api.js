@@ -48,7 +48,10 @@ function generateId() {
 }
 
 export function generateStaticSmartLinkHTML(smartlink) {
-    const platformLinks = smartlink.platformLinks?.filter(link => PLATFORM_CONFIG[link.platform]) || [];
+    // **CORRECTION : Filtrer les liens invalides et ceux sans plateforme configurée**
+    const platformLinks = smartlink.platformLinks?.filter(link => 
+        link && typeof link.platform === 'string' && PLATFORM_CONFIG[link.platform]
+    ) || [];
 
     const platformsHTML = platformLinks.map(link => {
         const config = PLATFORM_CONFIG[link.platform];
