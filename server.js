@@ -587,30 +587,10 @@ app.get('/smartlink/:artist/:track.html', async (req, res) => {
 
 // TEST ENDPOINT pour vérifier les déploiements
 app.get('/test-smartlink-generation', async (req, res) => {
-  try {
-    console.log('🧪 Test endpoint called');
-    
-    const testData = {
-      artistName: 'Test Artist',
-      trackTitle: 'Test Song',
-      coverImageUrl: 'https://example.com/cover.jpg',
-      platformLinks: [
-        { platform: 'Spotify', url: 'https://spotify.com/test' },
-        { platform: 'Apple Music', url: 'https://apple.com/test' }
-      ]
-    };
-    
-    const generatorModule = await import('./src/utils/staticPageGenerator.js');
-    const { generateStaticHTML } = generatorModule;
-    const html = generateStaticHTML(testData);
-    
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(html);
-    
-  } catch (error) {
-    console.error('❌ Test endpoint error:', error);
-    res.status(500).json({ error: error.message });
-  }
+  console.log('🧪🧪🧪 TEST ENDPOINT HIT - DEPLOYMENT WORKING 🧪🧪🧪');
+  
+  res.setHeader('Content-Type', 'text/plain');
+  res.send('SUCCESS! Test endpoint is working. Deployment is active. Time: ' + new Date().toISOString());
 });
 
 // Route catch-all pour l'application React (SPA routing)
