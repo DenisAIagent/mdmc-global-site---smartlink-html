@@ -35,7 +35,13 @@ app.use((req, res, next) => {
 
 // Health check endpoint pour Railway
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+  console.log('🏥 Health check called - Express.js server is running!');
+  res.status(200).json({ 
+    status: 'healthy', 
+    server: 'Express.js',
+    smartlinks: 'enabled',
+    timestamp: new Date().toISOString() 
+  });
 });
 
 // Debug endpoint pour diagnostic backend (ENTERPRISE-LEVEL)
