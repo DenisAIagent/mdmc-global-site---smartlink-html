@@ -558,8 +558,9 @@ app.post('/api/generate/smartlink-html', async (req, res) => {
       });
     }
     
-    // Import du générateur HTML
-    const { generateStaticHTML } = await import('./src/utils/staticPageGenerator.js');
+    // Import du générateur HTML (conversion pour CommonJS)
+    const generatorModule = await import('./src/utils/staticPageGenerator.js');
+    const { generateStaticHTML } = generatorModule;
     
     // Générer le HTML
     const html = generateStaticHTML(smartlinkData);
@@ -575,7 +576,24 @@ app.post('/api/generate/smartlink-html', async (req, res) => {
     const fileName = `${shortId}.html`;
     const filePath = path.join(slDir, fileName);
     
-    fs.writeFileSync(filePath, html, 'utf8');
+    console.log(`💾 Writing HTML file to: ${filePath}`);
+    console.log(`📏 HTML length: ${html.length} characters`);
+    
+    try {
+      fs.writeFileSync(filePath, html, 'utf8');
+      console.log(`✅ File successfully written to disk`);
+      
+      // Vérifier que le fichier existe
+      if (fs.existsSync(filePath)) {
+        const stats = fs.statSync(filePath);
+        console.log(`📊 File size: ${stats.size} bytes`);
+      } else {
+        console.error(`❌ File was not created: ${filePath}`);
+      }
+    } catch (writeError) {
+      console.error(`❌ Error writing file:`, writeError);
+      throw writeError;
+    }
     
     const publicUrl = `https://www.mdmcmusicads.com/sl/${fileName}`;
     
